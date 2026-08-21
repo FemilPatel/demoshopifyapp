@@ -117,7 +117,8 @@ mutation CreateVariants($productId: ID!, $variants: [ProductVariantsBulkInput!]!
       {
         "inventoryItemId": "gid://shopify/InventoryItem/12345",
         "locationId": "gid://shopify/Location/67890",
-        "delta": 15
+        "delta": 15,
+        "changeFromQuantity": 10
       }
     ]
   }

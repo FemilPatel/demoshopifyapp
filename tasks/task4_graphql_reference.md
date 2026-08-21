@@ -154,7 +154,8 @@ mutation AdjustVariantInventory($input: InventoryAdjustQuantitiesInput!) {
       {
         "inventoryItemId": "gid://shopify/InventoryItem/YOUR_INVENTORY_ITEM_ID",
         "locationId": "gid://shopify/Location/YOUR_LOCATION_ID",
-        "delta": 15
+        "delta": 15,
+        "changeFromQuantity": 10
       }
     ]
   }

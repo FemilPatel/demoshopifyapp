@@ -79,6 +79,7 @@ export const action = async ({ request }) => {
   const inventoryItemId = formData.get("inventoryItemId");
   const locationId = formData.get("locationId");
   const delta = parseInt(formData.get("delta"), 10);
+  const currentQuantity = parseInt(formData.get("currentQuantity"), 10) || 0;
 
   if (!inventoryItemId || !locationId || isNaN(delta)) {
     return { success: false, error: "Missing required fields or invalid delta quantity." };
@@ -111,6 +112,7 @@ export const action = async ({ request }) => {
               inventoryItemId,
               locationId,
               delta,
+              changeFromQuantity: currentQuantity,
             },
           ],
         },
@@ -255,6 +257,7 @@ export default function InventoryManagerTask() {
                           <fetcher.Form method="post" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                             <input type="hidden" name="inventoryItemId" value={variant.inventoryItem?.id || ""} />
                             <input type="hidden" name="locationId" value={location?.id || ""} />
+                            <input type="hidden" name="currentQuantity" value={variant.inventoryQuantity ?? 0} />
                             
                             <input
                               type="number"
