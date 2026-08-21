@@ -13,36 +13,44 @@ import { authenticate } from "../shopify.server";
 export const loader = async ({ request }) => {
   const { admin } = await authenticate.admin(request);
 
-  // Fetch order count and customers with their custom.total_orders metafield
-  const response = await admin.graphql(
-    `#graphql
-    query getDashboardData {
-      orders(first: 1) {
-        totalCount
-      }
-      customers(first: 20) {
-        nodes {
-          id
-          displayName
-          email
-          ordersCount
-          metafield(namespace: "custom", key: "total_orders") {
-            value
+  let totalOrdersProcessed = 0;
+  let customers = [];
+  let errorMsg = null;
+
+  try {
+    const response = await admin.graphql(
+      `#graphql
+      query getDashboardData {
+        ordersCount {
+          count
+        }
+        customers(first: 20) {
+          nodes {
+            id
+            displayName
+            email
+            ordersCount
+            metafield(namespace: "custom", key: "total_orders") {
+              value
+            }
           }
         }
-      }
-    }`
-  );
+      }`
+    );
 
-  const data = await response.json();
-  const totalOrdersProcessed = data?.data?.orders?.totalCount || 0;
-  const customers = data?.data?.customers?.nodes || [];
+    const data = await response.json();
+    totalOrdersProcessed = data?.data?.ordersCount?.count || 0;
+    customers = data?.data?.customers?.nodes || [];
+  } catch (err) {
+    console.error("[Task 2 Loader Error]", err);
+    errorMsg = err.message || "Failed to load dashboard data. Ensure scopes are updated.";
+  }
 
-  return { totalOrdersProcessed, customers };
+  return { totalOrdersProcessed, customers, loaderError: errorMsg };
 };
 
 export default function OrderCounterDashboard() {
-  const { totalOrdersProcessed, customers } = useLoaderData();
+  const { totalOrdersProcessed, customers, loaderError } = useLoaderData();
 
   return (
     <s-page heading="Task 2: Order Counter Dashboard">
@@ -50,6 +58,12 @@ export default function OrderCounterDashboard() {
         <s-paragraph>
           Real-time view of processed orders and customer order tracking metafields (`custom.total_orders`).
         </s-paragraph>
+
+        {loaderError && (
+          <s-box padding="base" margin-block-end="base" background="critical-subdued" borderRadius="base">
+            <s-text color="critical" weight="bold">⚠️ {loaderError}</s-text>
+          </s-box>
+        )}
 
         {/* Key Metrics Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "16px", marginBottom: "24px" }}>
