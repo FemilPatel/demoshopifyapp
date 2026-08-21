@@ -123,12 +123,12 @@ mutation CreateVariants($productId: ID!, $variants: [ProductVariantsBulkInput!]!
 
 ---
 
-## 3. Update Inventory of a Specific Variant (`inventoryAdjustQuantities`)
+## 3. Update Inventory of a Specific Variant (`inventorySetQuantities`)
 
 ### GraphQL Mutation
 ```graphql
-mutation AdjustVariantInventory($input: InventoryAdjustQuantitiesInput!) {
-  inventoryAdjustQuantities(input: $input) {
+mutation SetVariantInventory($input: InventorySetQuantitiesInput!) @idempotent {
+  inventorySetQuantities(input: $input) {
     inventoryAdjustmentGroup {
       reason
       changes {
@@ -150,12 +150,12 @@ mutation AdjustVariantInventory($input: InventoryAdjustQuantitiesInput!) {
   "input": {
     "reason": "correction",
     "name": "available",
-    "changes": [
+    "quantities": [
       {
         "inventoryItemId": "gid://shopify/InventoryItem/YOUR_INVENTORY_ITEM_ID",
         "locationId": "gid://shopify/Location/YOUR_LOCATION_ID",
-        "delta": 15,
-        "changeFromQuantity": 10
+        "quantity": 25,
+        "changeFromQuantity": 20
       }
     ]
   }

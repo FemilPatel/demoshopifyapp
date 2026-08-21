@@ -85,10 +85,12 @@ export const action = async ({ request }) => {
     return { success: false, error: "Missing required fields or invalid delta quantity." };
   }
 
+  const targetQuantity = Math.max(0, currentQuantity + delta);
+
   const response = await admin.graphql(
     `#graphql
-    mutation adjustInventory($input: InventoryAdjustQuantitiesInput!) {
-      inventoryAdjustQuantities(input: $input) {
+    mutation setInventory($input: InventorySetQuantitiesInput!) @idempotent {
+      inventorySetQuantities(input: $input) {
         inventoryAdjustmentGroup {
           reason
           changes {
@@ -107,11 +109,11 @@ export const action = async ({ request }) => {
         input: {
           reason: "correction",
           name: "available",
-          changes: [
+          quantities: [
             {
               inventoryItemId,
               locationId,
-              delta,
+              quantity: targetQuantity,
               changeFromQuantity: currentQuantity,
             },
           ],
@@ -121,13 +123,13 @@ export const action = async ({ request }) => {
   );
 
   const data = await response.json();
-  const userErrors = data?.data?.inventoryAdjustQuantities?.userErrors || [];
+  const userErrors = data?.data?.inventorySetQuantities?.userErrors || [];
 
   if (userErrors.length > 0) {
     return { success: false, error: userErrors.map((e) => e.message).join(", ") };
   }
 
-  return { success: true, message: `Successfully updated inventory by ${delta > 0 ? `+${delta}` : delta}!` };
+  return { success: true, message: `Successfully updated inventory to ${targetQuantity} units (${delta > 0 ? `+${delta}` : delta})!` };
 };
 
 export default function InventoryManagerTask() {
