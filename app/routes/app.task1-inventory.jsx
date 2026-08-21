@@ -86,50 +86,55 @@ export const action = async ({ request }) => {
   }
 
   const targetQuantity = Math.max(0, currentQuantity + delta);
+  const idempotencyKey = crypto.randomUUID();
 
-  const response = await admin.graphql(
-    `#graphql
-    mutation setInventory($input: InventorySetQuantitiesInput!) @idempotent {
-      inventorySetQuantities(input: $input) {
-        inventoryAdjustmentGroup {
-          reason
-          changes {
-            name
-            delta
+  try {
+    const response = await admin.graphql(
+      `#graphql
+      mutation setInventory($input: InventorySetQuantitiesInput!) {
+        inventorySetQuantities(input: $input) @idempotent(key: "${idempotencyKey}") {
+          inventoryAdjustmentGroup {
+            reason
+            changes {
+              name
+              delta
+            }
+          }
+          userErrors {
+            field
+            message
           }
         }
-        userErrors {
-          field
-          message
-        }
-      }
-    }`,
-    {
-      variables: {
-        input: {
-          reason: "correction",
-          name: "available",
-          quantities: [
-            {
-              inventoryItemId,
-              locationId,
-              quantity: targetQuantity,
-              changeFromQuantity: currentQuantity,
-            },
-          ],
+      }`,
+      {
+        variables: {
+          input: {
+            reason: "correction",
+            name: "available",
+            quantities: [
+              {
+                inventoryItemId,
+                locationId,
+                quantity: targetQuantity,
+              },
+            ],
+          },
         },
-      },
+      }
+    );
+
+    const data = await response.json();
+    const userErrors = data?.data?.inventorySetQuantities?.userErrors || [];
+
+    if (userErrors.length > 0) {
+      return { success: false, error: userErrors.map((e) => e.message).join(", ") };
     }
-  );
 
-  const data = await response.json();
-  const userErrors = data?.data?.inventorySetQuantities?.userErrors || [];
-
-  if (userErrors.length > 0) {
-    return { success: false, error: userErrors.map((e) => e.message).join(", ") };
+    return { success: true, message: `Successfully updated inventory to ${targetQuantity} units (${delta > 0 ? `+${delta}` : delta})!` };
+  } catch (err) {
+    console.error("[Task 1 Action Error]", err);
+    return { success: false, error: err.message || "Failed to update inventory. Please try again." };
   }
-
-  return { success: true, message: `Successfully updated inventory to ${targetQuantity} units (${delta > 0 ? `+${delta}` : delta})!` };
 };
 
 export default function InventoryManagerTask() {
