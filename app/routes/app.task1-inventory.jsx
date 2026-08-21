@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useLoaderData, useFetcher } from "react-router";
+import { useLoaderData, useFetcher, Form, useNavigate } from "react-router";
 import { authenticate } from "../shopify.server";
 
 /**
@@ -142,19 +142,9 @@ export const action = async ({ request }) => {
 export default function InventoryManagerTask() {
   const { products, location, searchQuery, loaderError } = useLoaderData();
   const fetcher = useFetcher();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState(searchQuery || "");
   const [adjustAmounts, setAdjustAmounts] = useState({});
-
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    const url = new URL(window.location.href);
-    if (searchTerm) {
-      url.searchParams.set("q", searchTerm);
-    } else {
-      url.searchParams.delete("q");
-    }
-    window.location.href = url.toString();
-  };
 
   const handleAmountChange = (variantId, value) => {
     setAdjustAmounts((prev) => ({ ...prev, [variantId]: value }));
@@ -188,10 +178,11 @@ export default function InventoryManagerTask() {
         )}
 
         {/* Search Bar */}
-        <form onSubmit={handleSearchSubmit} style={{ marginBottom: "20px" }}>
+        <Form method="get" style={{ marginBottom: "20px" }}>
           <s-stack direction="inline" gap="base" align="center">
             <input
               type="text"
+              name="q"
               placeholder="Search products by title..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -207,13 +198,16 @@ export default function InventoryManagerTask() {
             {searchQuery && (
               <s-button
                 type="button"
-                onClick={() => (window.location.href = window.location.pathname)}
+                onClick={() => {
+                  setSearchTerm("");
+                  navigate("/app/task1-inventory");
+                }}
               >
                 Clear
               </s-button>
             )}
           </s-stack>
-        </form>
+        </Form>
 
         {!location && (
           <s-box padding="base" background="warning-subdued" borderRadius="base">
