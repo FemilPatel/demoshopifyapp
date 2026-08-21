@@ -17,6 +17,10 @@ export default function App() {
     <AppProvider embedded apiKey={apiKey}>
       <s-app-nav>
         <s-link href="/app">Home</s-link>
+        <s-link href="/app/task1-inventory">Task 1: Inventory</s-link>
+        <s-link href="/app/task2-order-counter">Task 2: Orders & Metafields</s-link>
+        <s-link href="/app/task3-draft-orders">Task 3: Draft Orders</s-link>
+        <s-link href="/app/task4-graphql">Task 4: GraphQL Ref</s-link>
         <s-link href="/app/additional">Additional page</s-link>
       </s-app-nav>
       <Outlet />
