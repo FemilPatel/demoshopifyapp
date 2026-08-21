@@ -79,20 +79,18 @@ export const action = async ({ request }) => {
   const inventoryItemId = formData.get("inventoryItemId");
   const locationId = formData.get("locationId");
   const delta = parseInt(formData.get("delta"), 10);
-  const currentQuantity = parseInt(formData.get("currentQuantity"), 10) || 0;
 
   if (!inventoryItemId || !locationId || isNaN(delta)) {
     return { success: false, error: "Missing required fields or invalid delta quantity." };
   }
 
-  const targetQuantity = Math.max(0, currentQuantity + delta);
   const idempotencyKey = crypto.randomUUID();
 
   try {
     const response = await admin.graphql(
       `#graphql
-      mutation setInventory($input: InventorySetQuantitiesInput!) {
-        inventorySetQuantities(input: $input) @idempotent(key: "${idempotencyKey}") {
+      mutation adjustInventory($input: InventoryAdjustQuantitiesInput!) {
+        inventoryAdjustQuantities(input: $input) @idempotent(key: "${idempotencyKey}") {
           inventoryAdjustmentGroup {
             reason
             changes {
@@ -111,11 +109,12 @@ export const action = async ({ request }) => {
           input: {
             reason: "correction",
             name: "available",
-            quantities: [
+            changes: [
               {
                 inventoryItemId,
                 locationId,
-                quantity: targetQuantity,
+                delta,
+                changeFromQuantity: null,
               },
             ],
           },
@@ -124,16 +123,19 @@ export const action = async ({ request }) => {
     );
 
     const data = await response.json();
-    const userErrors = data?.data?.inventorySetQuantities?.userErrors || [];
+    const userErrors = data?.data?.inventoryAdjustQuantities?.userErrors || [];
 
     if (userErrors.length > 0) {
       return { success: false, error: userErrors.map((e) => e.message).join(", ") };
     }
 
-    return { success: true, message: `Successfully updated inventory to ${targetQuantity} units (${delta > 0 ? `+${delta}` : delta})!` };
+    return {
+      success: true,
+      message: `Successfully adjusted inventory by ${delta > 0 ? `+${delta}` : delta} units!`,
+    };
   } catch (err) {
     console.error("[Task 1 Action Error]", err);
-    return { success: false, error: err.message || "Failed to update inventory. Please try again." };
+    return { success: false, error: err.message || "Failed to adjust inventory. Please try again." };
   }
 };
 

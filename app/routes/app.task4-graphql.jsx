@@ -92,10 +92,10 @@ mutation CreateVariants($productId: ID!, $variants: [ProductVariantsBulkInput!]!
   },
   {
     id: "query3",
-    title: "3. Update Variant Inventory (inventorySetQuantities)",
+    title: "3. Update Variant Inventory (inventoryAdjustQuantities)",
     type: "MUTATION",
-    query: `mutation SetVariantInventory($input: InventorySetQuantitiesInput!) {
-  inventorySetQuantities(input: $input) @idempotent(key: "YOUR_UNIQUE_UUID") {
+    query: `mutation AdjustVariantInventory($input: InventoryAdjustQuantitiesInput!) {
+  inventoryAdjustQuantities(input: $input) @idempotent(key: "YOUR_UNIQUE_UUID") {
     inventoryAdjustmentGroup {
       reason
       changes {
@@ -113,11 +113,12 @@ mutation CreateVariants($productId: ID!, $variants: [ProductVariantsBulkInput!]!
   "input": {
     "reason": "correction",
     "name": "available",
-    "quantities": [
+    "changes": [
       {
         "inventoryItemId": "gid://shopify/InventoryItem/12345",
         "locationId": "gid://shopify/Location/67890",
-        "quantity": 25
+        "delta": 5,
+        "changeFromQuantity": null
       }
     ]
   }
